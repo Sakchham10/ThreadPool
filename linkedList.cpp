@@ -43,7 +43,8 @@ std::function<void()> *linkedList::pop() {
 
 int linkedList::getSize() { return size; }
 
-linkedList::linkedList(){}
+linkedList::linkedList():head(nullptr),tail(nullptr),size(0){
+}
 
 linkedList::~linkedList() {
     while (head != nullptr) {

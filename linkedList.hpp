@@ -10,8 +10,6 @@ struct node {
 
 class linkedList {
 public:
-    void init(int startRange, int endRange);
-
     linkedList();
 
     ~linkedList();
@@ -26,6 +24,5 @@ private:
     node *head;
     node *tail;
     int size;
-    int totalTimeToRun;
 };
 #endif

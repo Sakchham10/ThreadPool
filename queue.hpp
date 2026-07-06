@@ -9,7 +9,6 @@
 
 
 class queue {
-    int maxSize;
     linkedList taskList;
 
 public:

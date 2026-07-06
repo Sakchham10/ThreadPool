@@ -21,14 +21,25 @@ void threadManager::submit(std::function<void()> *task) {
 
 
 void threadManager::threadTask() {
-    // look at cleanup, because currently if the shuttingDown is changed to true, none of the threads will pick up the
-    // remaining work and will finish.
-    while (!shuttingDown) {
+    while (true) {
         std::unique_lock queueDataLock(queueLock);
-        taskInQueue.wait(queueDataLock, [this]() { return this->workQueue.size() > 0; });
+        taskInQueue.wait(queueDataLock, [this]() { return shuttingDown || this->workQueue.size() > 0; });
+        if (shuttingDown && this->workQueue.size() == 0) {
+            return;
+        }
         std::function<void()> *task = this->workQueue.pop();
         queueDataLock.unlock();
         (*task)();
         delete task;
+    }
+}
+
+threadManager::~threadManager() {
+    std::unique_lock queueDataLock(queueLock);
+    shuttingDown = true;
+    queueDataLock.unlock();
+    taskInQueue.notify_all();
+    for (auto &thread: threads) {
+        thread.join();
     }
 }

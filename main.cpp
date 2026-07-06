@@ -3,9 +3,7 @@
 
 int main() {
     threadManager manager = threadManager(20);
-    linkedList list = linkedList();
+    queue myQueue = queue();
+    // std::function task = [&myQueue]() { myQueue.pop(); };
+    // manager.submit(&task);
 }
-
-// linkedList will take the threadManger and use the threads there?
-// each object will take from a pool of threadManger.
-//

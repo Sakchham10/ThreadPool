@@ -23,7 +23,8 @@ public:
 
     std::condition_variable cv;
 
-    threadManager(int maxSize);
+    explicit threadManager(int maxSize = 10);
+    ~threadManager();
 
     void submit(std::function<void()> *task);
 };
