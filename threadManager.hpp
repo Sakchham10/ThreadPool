@@ -7,28 +7,29 @@
 #include <thread>
 #include <vector>
 
+#include "queue.hpp"
+
 class threadManager {
+    int maxSize;
+    std::condition_variable maxThreadsReached;
+    std::mutex queueLock;
     std::vector<std::thread> threads;
-    int totalThreads;
+    queue workQueue;
+
+    void put(std::function<void()> func);
+
+    void pop();
 
 public:
     bool shouldThreadsBeLocked = false;
 
-    std::mutex threadActivationLock;
+    std::mutex threadLock;
 
     std::condition_variable cv;
 
-    threadManager();
+    threadManager(int maxSize);
 
-    void unlockAllThreads();
-
-    void lockAllThreads();
-
-    void runTask(std::function<void()> func);
-
-    void clearThreads();
-
-    void joinAllThreads();
+    void submit(std::function<void()> task);
 };
 
 

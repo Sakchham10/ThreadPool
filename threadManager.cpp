@@ -3,34 +3,23 @@
 //
 
 #include "threadManager.hpp"
+#include "queue.hpp"
 
-threadManager::threadManager() {
-    threads = std::vector<std::thread>();
+threadManager::threadManager(int maxSize) : workQueue(maxSize) {
+    threads = std::vector<std::thread>(maxSize);
 }
 
-void threadManager::unlockAllThreads() {
-    std::unique_lock lock(threadActivationLock);
-    shouldThreadsBeLocked = false;
-    cv.notify_all();
-    threadActivationLock.unlock();
-}
-
-void threadManager::lockAllThreads() {
-    std::unique_lock lock(threadActivationLock);
-    shouldThreadsBeLocked = true;
-    threadActivationLock.unlock();
-}
-
-void threadManager::runTask(std::function<void()> func) {
-    threads.emplace_back(func);
-}
-
-void threadManager::clearThreads() {
-    threads.clear();
-}
-
-void threadManager::joinAllThreads() {
-    for (int i = 0; i < this->threads.size(); i++) {
-        threads[i].join();
+void threadManager::submit(std::function<void()> task) {
+    std::unique_lock threadPoolLock(threadLock);
+    if (threads.size() < maxSize && workQueue.size() > 0) {
+        std::function<void()> work = workQueue.pop();
+        threads.emplace_back(work);
+    } else if (threads.size() < maxSize && workQueue.size() == 0) {
+        threads.emplace_back(task);
     }
 }
+
+// taskA created-> put in threads.
+// done until task maxSize.
+// more tasks are put in Queue.
+// these tasks should be worked on by a conditional variable.

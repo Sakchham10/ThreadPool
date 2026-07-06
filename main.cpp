@@ -2,10 +2,11 @@
 #include "threadManager.hpp"
 
 int main() {
-    threadManager tManager = threadManager();
-    linkedList ll = linkedList(&tManager);
-    ll.init(10, 100);
-    ll.startTest(100, 10);
+	threadManager manager = threadManager(20);
+	linkedList list = linkedList();
+	threadManager.run(linkedList.pop(22));
+	threadManager.run(linkedList.push(11));
+	threadManager.run(linkedList.pop(17))
 }
 
 //linkedList will take the threadManger and use the threads there?

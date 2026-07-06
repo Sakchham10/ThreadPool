@@ -1,193 +1,58 @@
 #include "linkedList.hpp"
-#include <iostream>
-#include "threadManager.hpp"
-#include "utils.hpp"
 
-void linkedList::insertNode(int value) {
-    std::unique_lock activationLock(tManager->threadActivationLock);
-    tManager->cv.wait(activationLock, [this] {
-        return tManager->shouldThreadsBeLocked == false;
-    });
-    activationLock.unlock();
+#include <iostream>
+
+#include "threadManager.hpp"
+
+void linkedList::append(std::function<void()> value) {
     writerSemaphore.acquire();
-    node *newNode = new node{value, nullptr};
+    node *newNode = new node{std::move(value), nullptr, nullptr};
+    size++;
     if (head == nullptr) {
         head = newNode;
+        tail = newNode;
         writerSemaphore.release();
         return;
     }
-    node *curr = head;
-    while (curr->next != nullptr) {
-        curr = curr->next;
-    }
-    curr->next = newNode;
+    node *currTail = tail;
+    currTail->next = newNode;
+    newNode->prev = currTail;
+    tail = newNode;
     writerSemaphore.release();
 }
 
-void linkedList::deleteNode(int value) {
-    std::unique_lock activationLock(tManager->threadActivationLock);
-    tManager->cv.wait(activationLock, [this] {
-        return tManager->shouldThreadsBeLocked == false;
-    });
-    activationLock.unlock();
+std::function<void()> linkedList::pop() {
     writerSemaphore.acquire();
-    if (head == nullptr) {
-        std::cout << "No node in linkedlist. Delete aborted.\n";
+    size--;
+    if (head == tail && head != nullptr) {
+        std::cout << "Only one node: popping from head\n";
+        std::function<void()> func = head->value;
+        delete(head);
+        head = nullptr;
+        tail = nullptr;
         writerSemaphore.release();
-        return;
+        return func;
     }
-    node *curr = head;
-    node *prev = nullptr;
-    while (curr != nullptr && curr->value != value) {
-        prev = curr;
-        curr = curr->next;
-    }
-    if (curr == nullptr) {
-        std::cout << "Delete aborted,value not found\n";
+    if (head == tail && head == nullptr) {
+        std::cout << "No node to pop:\n";
         writerSemaphore.release();
-        return;
+        return nullptr;
     }
-    if (prev == nullptr) {
-        std::cout << "Deleting the head\n";
-        node *temp = head;
-        head = head->next;
-        delete temp;
-        writerSemaphore.release();
-        return;
-    }
-    prev->next = curr->next;
-    std::cout << "Deleting the value " << value << "\n";
-    delete curr;
+    node *currTail = tail;
+    currTail->prev->next = nullptr;
+    tail = currTail->prev;
+    std::function<void()> func = currTail->value;
+    delete(currTail);
     writerSemaphore.release();
+    return func;
 }
 
-bool linkedList::findNode(int value) {
-    std::unique_lock activationLock(tManager->threadActivationLock);
-    tManager->cv.wait(activationLock, [this] {
-        return tManager->shouldThreadsBeLocked == false;
-    });
-    activationLock.unlock();
-    readerSemaphore.acquire();
-    readerCount++;
-    if (readerCount == 1) {
-        writerSemaphore.acquire();
-    }
-    readerSemaphore.release();
-    if (head == nullptr) {
-        std::cout << "No node in linkedlist. Can't find anything.\n";
-        readerSemaphore.acquire();
-        readerCount--;
-        if (readerCount == 0) {
-            writerSemaphore.release();
-        }
-        readerSemaphore.release();
-        return false;
-    }
-    node *curr = head;
-    while (curr != nullptr && curr->value != value) {
-        curr = curr->next;
-    }
-    if (curr == nullptr) {
-        std::cout << value << " not found. Find aborted.\n";
-        readerSemaphore.acquire();
-        readerCount--;
-        if (readerCount == 0) {
-            writerSemaphore.release();
-        }
-        readerSemaphore.release();
-        return false;
-    }
-    readerSemaphore.acquire();
-    readerCount--;
-    if (readerCount == 0) {
-        writerSemaphore.release();
-    }
-    readerSemaphore.release();
-    return true;
+int linkedList::getSize() {
+    return size;
 }
 
-bool linkedList::findAndReplaceNode(int currValue, int value) {
-    std::unique_lock activationLock(tManager->threadActivationLock);
-    tManager->cv.wait(activationLock, [this] {
-        return tManager->shouldThreadsBeLocked == false;
-    });
-    activationLock.unlock();
-    writerSemaphore.acquire();
-    if (head == nullptr) {
-        std::cout << "No node in linkedlist, aborting replace\n";
-        writerSemaphore.release();
-        return false;
-    }
-    node *curr = head;
-    while (curr != nullptr && curr->value != currValue) {
-        curr = curr->next;
-    }
-    if (curr == nullptr) {
-        std::cout << currValue << " not found. Replace aborted\n";
-        writerSemaphore.release();
-        return false;
-    }
-    curr->value = value;
-    std::cout << currValue << " replaced with " << value << "\n";
-    writerSemaphore.release();
-    return true;
-}
-
-void linkedList::init(int startRange, int endRange) {
-    //inserts in a predictable manner to see the value first. So no multithreading here.
-    tManager->unlockAllThreads();
-    for (int i = startRange; i <= endRange; i++) {
-        this->insertNode(i);
-    }
-    std::cout << "Completed intializtion.\nLL starts at: " << startRange << "\nLL ends at: " << endRange << "\n";
-    this->startRange = startRange;
-    this->endRange = endRange;
-    tManager->lockAllThreads();
-}
-
-void linkedList::startTest(int timeToRun, int totalThreads) {
-    auto start = std::chrono::steady_clock::now();
-    while (true) {
-        auto diff = std::chrono::steady_clock::now() - start;
-        long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
-        tManager->clearThreads();
-        tManager->lockAllThreads();
-        if (elapsed > timeToRun) {
-            return;
-        }
-        for (int i = 0; i < totalThreads; i++) {
-            int randomNumber = utils::getRandom(0, 3);
-            if (randomNumber == 0) {
-                std::function func = [this] {
-                    this->insertNode(utils::getRandom(startRange, endRange));
-                };
-                tManager->runTask(func);
-            } else if (randomNumber == 1) {
-                std::function func = [this] {
-                    this->deleteNode(utils::getRandom(startRange, endRange));
-                };
-                tManager->runTask(func);
-            } else if (randomNumber == 2) {
-                std::function func = [this] {
-                    this->findNode(utils::getRandom(startRange, endRange));
-                };
-                tManager->runTask(func);
-            } else {
-                std::function func = [this] {
-                    this->findAndReplaceNode(utils::getRandom(startRange, endRange),
-                                             utils::getRandom(startRange, endRange));
-                };
-                tManager->runTask(func);
-            }
-        }
-        tManager->unlockAllThreads();
-        tManager->joinAllThreads();
-    }
-}
-
-linkedList::linkedList(threadManager *tManager) : readerSemaphore(1), writerSemaphore(1) {
+linkedList::linkedList() : readerSemaphore(1), writerSemaphore(1) {
     head = nullptr;
-    this->tManager = tManager;
 }
 
 linkedList::~linkedList() {

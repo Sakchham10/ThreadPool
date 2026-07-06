@@ -1,44 +1,35 @@
 #ifndef THREADSAFEDATASTRUCTURE_LINKEDLIST_HPP
 #define THREADSAFEDATASTRUCTURE_LINKEDLIST_HPP
-#include <mutex>
 #include <semaphore>
-
 #include "threadManager.hpp"
 
 
 struct node {
-   int value;
+   std::function<void()> value;
    node *next;
+   node *prev;
 };
 
 class linkedList {
 public:
-   threadManager *tManager;
-
    void init(int startRange, int endRange);
 
-   linkedList(threadManager *tManager);
+   linkedList();
 
    ~linkedList();
 
-   void startTest(int timeToRun, int totalThreads);
+   int getSize();
+
+   void append(std::function<void()> func);
+
+   std::function<void()> pop();
 
 private:
    node *head;
+   node *tail;
    std::binary_semaphore readerSemaphore;
    std::binary_semaphore writerSemaphore;
+   int size;
    int totalTimeToRun;
-   int totalOperationsCompleted;
-   int startRange;
-   int endRange;
-   int readerCount;
-
-   void insertNode(int value);
-
-   void deleteNode(int value);
-
-   bool findNode(int value);
-
-   bool findAndReplaceNode(int currValue, int value);
 };
 #endif
