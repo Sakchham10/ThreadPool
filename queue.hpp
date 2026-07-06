@@ -5,24 +5,21 @@
 #ifndef THREADSAFEDATASTRUCTURE_QUEUE_HPP
 #define THREADSAFEDATASTRUCTURE_QUEUE_HPP
 #include <functional>
-
 #include "linkedList.hpp"
 
 
 class queue {
-	int maxSize;
-	std::condition_variable queueFull;
-	linkedList taskList;
-	std::mutex queueLock;
+    int maxSize;
+    linkedList taskList;
 
 public:
-	void put(std::function<void()> func);
+    void put(std::function<void()> *func);
 
-	std::function<void()> pop();
+    std::function<void()> *pop();
 
-	int size();
+    int size();
 
-	queue(int maxSize);
+    queue();
 };
 
-#endif //THREADSAFEDATASTRUCTURE_QUEUE_HPP
+#endif // THREADSAFEDATASTRUCTURE_QUEUE_HPP

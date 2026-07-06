@@ -5,21 +5,30 @@
 #include "threadManager.hpp"
 #include "queue.hpp"
 
-threadManager::threadManager(int maxSize) : workQueue(maxSize) {
-    threads = std::vector<std::thread>(maxSize);
-}
-
-void threadManager::submit(std::function<void()> task) {
-    std::unique_lock threadPoolLock(threadLock);
-    if (threads.size() < maxSize && workQueue.size() > 0) {
-        std::function<void()> work = workQueue.pop();
-        threads.emplace_back(work);
-    } else if (threads.size() < maxSize && workQueue.size() == 0) {
-        threads.emplace_back(task);
+threadManager::threadManager(int maxSize) {
+    threads.reserve(maxSize);
+    for (int i = 0; i < maxSize; i++) {
+        threads.emplace_back(&threadManager::threadTask, this);
     }
 }
 
-// taskA created-> put in threads.
-// done until task maxSize.
-// more tasks are put in Queue.
-// these tasks should be worked on by a conditional variable.
+void threadManager::submit(std::function<void()> *task) {
+    std::unique_lock queueDataLock(queueLock);
+    this->workQueue.put(task);
+    queueDataLock.unlock();
+    taskInQueue.notify_one();
+}
+
+
+void threadManager::threadTask() {
+    // look at cleanup, because currently if the shuttingDown is changed to true, none of the threads will pick up the
+    // remaining work and will finish.
+    while (!shuttingDown) {
+        std::unique_lock queueDataLock(queueLock);
+        taskInQueue.wait(queueDataLock, [this]() { return this->workQueue.size() > 0; });
+        std::function<void()> *task = this->workQueue.pop();
+        queueDataLock.unlock();
+        (*task)();
+        delete task;
+    }
+}
