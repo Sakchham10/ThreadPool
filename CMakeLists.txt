@@ -12,4 +12,6 @@ add_executable(ThreadSafeDataStructure main.cpp
         threadManager.cpp
         utils.cpp
         utils.hpp
+        linkedListNum.cpp
+        linkedListNum.hpp
 )
