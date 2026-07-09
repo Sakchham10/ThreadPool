@@ -21,7 +21,6 @@ void linkedList::append(std::function<void()> *value) {
 std::function<void()> *linkedList::pop() {
     size--;
     if (head == tail && head != nullptr) {
-        std::cout << "Only one node: popping from head\n";
         std::function<void()> *func = head->value;
         delete (head);
         head = nullptr;
@@ -29,7 +28,6 @@ std::function<void()> *linkedList::pop() {
         return func;
     }
     if (head == tail && head == nullptr) {
-        std::cout << "No node to pop:\n";
         size = 0;
         return nullptr;
     }
@@ -43,8 +41,7 @@ std::function<void()> *linkedList::pop() {
 
 int linkedList::getSize() { return size; }
 
-linkedList::linkedList():head(nullptr),tail(nullptr),size(0){
-}
+linkedList::linkedList() : head(nullptr), tail(nullptr), size(0) {}
 
 linkedList::~linkedList() {
     while (head != nullptr) {

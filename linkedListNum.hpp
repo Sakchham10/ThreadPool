@@ -6,6 +6,8 @@
 #define THREADSAFEDATASTRUCTURE_LINKEDLISTNUM_HPP
 #include <mutex>
 
+#include "threadManager.hpp"
+
 
 struct numNode {
     int value;
@@ -14,11 +16,14 @@ struct numNode {
 class linkedListNum {
     std::mutex lock;
     numNode *head;
+    threadManager &manager;
+    int totalTasks;
 
 public:
     void put(int value);
     void findAndpop(int value);
-    linkedListNum();
+    int tests(int time);
+    linkedListNum(threadManager &thrdMngr);
     ~linkedListNum();
 };
 

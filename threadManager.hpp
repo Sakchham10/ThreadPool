@@ -27,6 +27,10 @@ public:
     ~threadManager();
 
     void submit(std::function<void()> *task);
+
+    void waitForAll();
+
+    int getQueueSize();
 };
 
 

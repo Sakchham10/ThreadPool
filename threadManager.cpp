@@ -39,7 +39,13 @@ threadManager::~threadManager() {
     shuttingDown = true;
     queueDataLock.unlock();
     taskInQueue.notify_all();
+}
+
+
+void threadManager::waitForAll() {
     for (auto &thread: threads) {
         thread.join();
     }
 }
+
+int threadManager::getQueueSize() { return workQueue.size(); }
