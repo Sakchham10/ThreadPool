@@ -8,10 +8,10 @@
 
 #include "utils.hpp"
 
-linkedListNum::linkedListNum(threadManager &thrdMngr) : head(nullptr), manager(thrdMngr) {}
+linkedListNum::linkedListNum() : head(nullptr), totalTasks(0) {}
 void linkedListNum::put(int value) {
     std::unique_lock dataAccessLock(lock);
-    numNode *newNode = new numNode{value, nullptr};
+    auto *newNode = new numNode{value, nullptr};
     if (head == nullptr) {
         head = newNode;
         std::cout << "Adding to head: " << value << "\n";
@@ -50,7 +50,7 @@ void linkedListNum::findAndpop(int value) {
     std::cout << "Remove value: " << value << "\n";
     dataAccessLock.unlock();
 }
-int linkedListNum::tests(int time) {
+int linkedListNum::tests(threadManager &manager, int time) {
     auto start = std::chrono::steady_clock::now();
     while (true) {
         auto randVal = utils::getRandom(0, 2);
@@ -63,8 +63,6 @@ int linkedListNum::tests(int time) {
         auto end = std::chrono::steady_clock::now();
         auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         if (elapsedMs > time) {
-            int val = manager.getQueueSize();
-            std::cout << "Total remaining now: " << val << "\n";
             return totalTasks;
         }
     }

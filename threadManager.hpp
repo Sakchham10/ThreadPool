@@ -10,7 +10,7 @@
 #include "queue.hpp"
 
 class threadManager {
-    int maxSize;
+    int threadCount;
     std::condition_variable taskInQueue;
     std::mutex queueLock;
     std::vector<std::thread> threads;
@@ -23,14 +23,12 @@ public:
 
     std::condition_variable cv;
 
-    explicit threadManager(int maxSize = 10);
+    explicit threadManager(int threadCount = 10);
     ~threadManager();
 
     void submit(std::function<void()> *task);
-
-    void waitForAll();
-
     int getQueueSize();
+    void shutDown();
 };
 
 

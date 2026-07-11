@@ -19,6 +19,9 @@ void linkedList::append(std::function<void()> *value) {
 }
 
 std::function<void()> *linkedList::pop() {
+    if (head == nullptr) {
+        return nullptr;
+    }
     size--;
     if (head == tail && head != nullptr) {
         std::function<void()> *func = head->value;
@@ -31,11 +34,11 @@ std::function<void()> *linkedList::pop() {
         size = 0;
         return nullptr;
     }
-    node *currTail = tail;
-    currTail->prev->next = nullptr;
-    tail = currTail->prev;
-    std::function<void()> *func = currTail->value;
-    delete (currTail);
+    node *currHead = head;
+    head = currHead->next;
+    head->prev = nullptr;
+    std::function<void()> *func = currHead->value;
+    delete (currHead);
     return func;
 }
 

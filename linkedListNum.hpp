@@ -16,14 +16,13 @@ struct numNode {
 class linkedListNum {
     std::mutex lock;
     numNode *head;
-    threadManager &manager;
     int totalTasks;
 
 public:
     void put(int value);
     void findAndpop(int value);
-    int tests(int time);
-    linkedListNum(threadManager &thrdMngr);
+    int tests(threadManager &thrdMngr, int time);
+    linkedListNum();
     ~linkedListNum();
 };
 

@@ -5,15 +5,19 @@
 #include "threadManager.hpp"
 #include "queue.hpp"
 
-threadManager::threadManager(int maxSize) {
-    threads.reserve(maxSize);
-    for (int i = 0; i < maxSize; i++) {
+threadManager::threadManager(int threadCount) : threadCount(threadCount) {
+    threads.reserve(threadCount);
+    for (int i = 0; i < threadCount; i++) {
         threads.emplace_back(&threadManager::threadTask, this);
     }
 }
 
 void threadManager::submit(std::function<void()> *task) {
     std::unique_lock queueDataLock(queueLock);
+    if (shuttingDown) {
+        delete task;
+        throw std::runtime_error("submit after shutdown");
+    }
     this->workQueue.put(task);
     queueDataLock.unlock();
     taskInQueue.notify_one();
@@ -34,18 +38,23 @@ void threadManager::threadTask() {
     }
 }
 
-threadManager::~threadManager() {
+threadManager::~threadManager() = default;
+
+int threadManager::getQueueSize() {
+    std::unique_lock queueDataLock(queueLock);
+    const int size = workQueue.size();
+    queueDataLock.unlock();
+    return size;
+}
+
+void threadManager::shutDown() {
     std::unique_lock queueDataLock(queueLock);
     shuttingDown = true;
     queueDataLock.unlock();
     taskInQueue.notify_all();
-}
-
-
-void threadManager::waitForAll() {
     for (auto &thread: threads) {
-        thread.join();
+        if (thread.joinable()) {
+            thread.join();
+        }
     }
 }
-
-int threadManager::getQueueSize() { return workQueue.size(); }
