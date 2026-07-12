@@ -1,6 +1,6 @@
 #include "queue.hpp"
 
-queue::queue() {}
+queue::queue(int size) : maxSize(size) {}
 
 void queue::put(std::function<void()> *func) { taskList.append(func); }
 
@@ -9,4 +9,6 @@ std::function<void()> *queue::pop() {
     return func;
 }
 
-int queue::size() { return taskList.getSize(); }
+int queue::getSize() { return taskList.getSize(); }
+
+int queue::getMaxSize() { return maxSize; }

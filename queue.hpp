@@ -9,6 +9,7 @@
 
 
 class queue {
+    int maxSize;
     linkedList taskList;
 
 public:
@@ -16,9 +17,10 @@ public:
 
     std::function<void()> *pop();
 
-    int size();
+    int getSize();
+    int getMaxSize();
 
-    queue();
+    queue(int size = 10);
 };
 
 #endif // THREADSAFEDATASTRUCTURE_QUEUE_HPP

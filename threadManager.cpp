@@ -18,21 +18,23 @@ void threadManager::submit(std::function<void()> *task) {
         delete task;
         throw std::runtime_error("submit after shutdown");
     }
+    taskInQueue.wait(queueDataLock, [this] { return this->workQueue.getSize() < this->workQueue.getMaxSize(); });
     this->workQueue.put(task);
     queueDataLock.unlock();
-    taskInQueue.notify_one();
+    taskInQueue.notify_all();
 }
 
 
 void threadManager::threadTask() {
     while (true) {
         std::unique_lock queueDataLock(queueLock);
-        taskInQueue.wait(queueDataLock, [this]() { return shuttingDown || this->workQueue.size() > 0; });
-        if (shuttingDown && this->workQueue.size() == 0) {
+        taskInQueue.wait(queueDataLock, [this]() { return shuttingDown || this->workQueue.getSize() > 0; });
+        if (shuttingDown && this->workQueue.getSize() == 0) {
             return;
         }
         std::function<void()> *task = this->workQueue.pop();
         queueDataLock.unlock();
+        taskInQueue.notify_all();
         (*task)();
         delete task;
     }
@@ -42,7 +44,7 @@ threadManager::~threadManager() = default;
 
 int threadManager::getQueueSize() {
     std::unique_lock queueDataLock(queueLock);
-    const int size = workQueue.size();
+    const int size = workQueue.getSize();
     queueDataLock.unlock();
     return size;
 }
