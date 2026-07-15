@@ -1,57 +1,67 @@
 # Thread-Safe Data Structures in C++
 
-This repository is a learning project for building basic data structures and
-coordination primitives in C++ while exploring concurrency.
+This is a small C++20 learning project for experimenting with thread
+coordination and manually implemented data structures.
 
-The current code focuses on:
+The program currently builds a fixed-size worker pool, submits randomized linked
+list operations into it for a short stress run, shuts the workers down, and
+prints basic task statistics.
 
-- A simple task queue used by a thread manager
-- A thread pool that accepts `std::function<void()>` jobs
-- A mutex-protected linked list of integers
-- A randomized workload that submits concurrent insert and remove tasks
+## What Is In This Repo
 
-## Current Structure
+- `threadManager`: a simple thread pool. It owns worker threads, accepts
+  heap-allocated `std::function<void()>` tasks, blocks submissions when the
+  queue reaches its max size, and drains queued work during shutdown.
+- `queue`: a bounded task queue facade used by `threadManager`.
+- `linkedList`: a doubly linked list that stores task pointers for the queue.
+- `linkedListNum`: a singly linked integer list used as the concurrency test
+  target. Writers use a mutex; readers use a basic readers-writer pattern with a
+  `std::binary_semaphore`, a reader count, and the same writer mutex.
+- `utils`: a random integer helper used by the stress test.
+- `main.cpp`: creates a `threadManager` with one worker, runs the integer-list
+  stress test for about 4000 ms, shuts the pool down, and prints stats.
 
-- `threadManager` starts a fixed number of worker threads and dispatches queued
-  tasks until shutdown.
-- `queue` is a lightweight linked-list-backed task queue used internally by the
-  thread manager.
-- `linkedList` stores task pointers for the queue implementation.
-- `linkedListNum` stores integers and protects the list with a single mutex.
-- `utils` provides a random number helper used by the stress test.
+## Current Behavior
 
-## Learning Notes
+The stress test repeatedly submits random insert or remove tasks against values
+from 1 to 100. Each completed list operation increments a task counter. At the
+end, the program prints:
 
-- The code intentionally uses raw pointers in some places to make ownership and
-  manual memory management visible.
-- The thread pool currently owns submitted tasks and deletes them after
-  execution.
-- `linkedListNum` uses one mutex around the entire list, which keeps the design
-  simple and easy to reason about before moving to finer-grained locking.
+- total completed tasks
+- elapsed stress-test time in milliseconds
+
+The list methods also print individual add/remove/miss messages while the test
+runs, so normal output is intentionally noisy.
 
 ## Requirements
 
 - A C++20-compatible compiler
+- CMake, if you want to use the included `CMakeLists.txt`
 
 ## Build and Run
+
+Using a compiler directly:
 
 ```sh
 clang++ -std=c++20 main.cpp linkedList.cpp queue.cpp threadManager.cpp utils.cpp linkedListNum.cpp -o ThreadSafeDataStructure
 ./ThreadSafeDataStructure
 ```
 
-If you prefer CMake, the repository also includes a `CMakeLists.txt` file.
+Using CMake:
 
-## Entry Point
+```sh
+cmake -S . -B build
+cmake --build build
+./build/ThreadSafeDataStructure
+```
 
-`main.cpp` creates a `threadManager`, runs the randomized linked-list stress
-test, prints the number of tasks submitted, and then shuts the pool down.
+## Notes From The Current Implementation
 
-## Next Steps
-
-Possible follow-ups include:
-
-- Moving task ownership to value semantics instead of raw pointers
-- Making the queue itself thread-safe
-- Adding copy/move rules to the owning types
-- Expanding the data structure set with more concurrency experiments
+- Task ownership is manual: callers submit `new std::function<void()>`, and the
+  thread pool deletes each task after execution or after rejected submission.
+- `queue` and `linkedList` are not independently thread-safe. They are protected
+  by `threadManager`'s queue mutex.
+- `linkedListNum` uses coarse-grained write locking and a simple readers-writer
+  scheme. This keeps the code approachable, but it is still experimental.
+- `threadManager::restart()` is declared in the header but is not implemented.
+- There are no automated tests yet; `main.cpp` is the current executable demo.
