@@ -3,6 +3,9 @@
 //
 
 #include "threadManager.hpp"
+
+#include <iostream>
+
 #include "queue.hpp"
 
 threadManager::threadManager(int threadCount) : threadCount(threadCount) {
@@ -36,8 +39,13 @@ void threadManager::threadTask() {
         std::function<void()> *task = this->workQueue.pop();
         queueDataLock.unlock();
         taskInQueue.notify_all();
-        (*task)();
-        delete task;
+        try {
+            (*task)();
+            delete task;
+        } catch (...) {
+            delete task;
+            std::cout << "Error occured while running task.\n";
+        }
     }
 }
 

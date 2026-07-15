@@ -24,6 +24,7 @@ void linkedListNum::put(int value) {
     }
     curr->next = newNode;
     dataAccessLock.unlock();
+    totalTasks++;
     std::cout << "Adding: " << value << "\n";
 }
 
@@ -47,6 +48,7 @@ void linkedListNum::findAndpop(int value) {
     }
     delete curr;
     dataAccessLock.unlock();
+    totalTasks++;
     std::cout << "Remove value: " << value << "\n";
 }
 void linkedListNum::test(threadManager &manager, int time) {
@@ -55,10 +57,10 @@ void linkedListNum::test(threadManager &manager, int time) {
         auto randVal = utils::getRandom(0, 2);
         if (randVal == 0) {
             manager.submit(new std::function([this]() { this->findAndpop(utils::getRandom(1, 100)); }));
+
         } else {
             manager.submit(new std::function([this]() { this->put(utils::getRandom(1, 100)); }));
         }
-        totalTasks++;
         auto end = std::chrono::steady_clock::now();
         auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         if (elapsedMs > time) {

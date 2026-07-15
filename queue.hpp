@@ -14,12 +14,9 @@ class queue {
 
 public:
     void put(std::function<void()> *func);
-
     std::function<void()> *pop();
-
     int getSize();
     int getMaxSize();
-
     queue(int size = 10);
 };
 
