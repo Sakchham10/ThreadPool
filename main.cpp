@@ -10,6 +10,6 @@ int main() {
     myList.getStats();
     threadManager manager2 = threadManager(10);
     linkedListNum myList2 = linkedListNum();
-    myList2.test(manager, 4000);
+    myList2.test(manager2, 4000);
     myList.getStats();
 }
