@@ -29,6 +29,7 @@ public:
     void submit(std::function<void()> *task);
     int getQueueSize();
     void shutDown();
+    void restart();
 };
 
 

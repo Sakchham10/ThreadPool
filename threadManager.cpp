@@ -14,11 +14,12 @@ threadManager::threadManager(int threadCount) : threadCount(threadCount) {
 
 void threadManager::submit(std::function<void()> *task) {
     std::unique_lock queueDataLock(queueLock);
+    taskInQueue.wait(queueDataLock,
+                     [this] { return shuttingDown || this->workQueue.getSize() < this->workQueue.getMaxSize(); });
     if (shuttingDown) {
         delete task;
         throw std::runtime_error("submit after shutdown");
     }
-    taskInQueue.wait(queueDataLock, [this] { return this->workQueue.getSize() < this->workQueue.getMaxSize(); });
     this->workQueue.put(task);
     queueDataLock.unlock();
     taskInQueue.notify_all();
@@ -40,7 +41,7 @@ void threadManager::threadTask() {
     }
 }
 
-threadManager::~threadManager() = default;
+threadManager::~threadManager() { shutDown(); }
 
 int threadManager::getQueueSize() {
     std::unique_lock queueDataLock(queueLock);

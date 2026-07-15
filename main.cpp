@@ -3,8 +3,13 @@
 #include "threadManager.hpp"
 
 int main() {
-    threadManager manager = threadManager(40);
+    threadManager manager = threadManager(1);
     linkedListNum myList = linkedListNum();
-    std::cout << myList.tests(manager, 1000) << " :tasks completed\n";
+    myList.test(manager, 4000);
     manager.shutDown();
+    myList.getStats();
+    threadManager manager2 = threadManager(10);
+    linkedListNum myList2 = linkedListNum();
+    myList2.test(manager, 4000);
+    myList.getStats();
 }

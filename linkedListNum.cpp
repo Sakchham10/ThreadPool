@@ -14,8 +14,8 @@ void linkedListNum::put(int value) {
     auto *newNode = new numNode{value, nullptr};
     if (head == nullptr) {
         head = newNode;
-        std::cout << "Adding to head: " << value << "\n";
         dataAccessLock.unlock();
+        std::cout << "Adding to head: " << value << "\n";
         return;
     }
     auto curr = head;
@@ -23,8 +23,8 @@ void linkedListNum::put(int value) {
         curr = curr->next;
     }
     curr->next = newNode;
-    std::cout << "Adding: " << value << "\n";
     dataAccessLock.unlock();
+    std::cout << "Adding: " << value << "\n";
 }
 
 void linkedListNum::findAndpop(int value) {
@@ -36,9 +36,8 @@ void linkedListNum::findAndpop(int value) {
         curr = curr->next;
     }
     if (curr == nullptr) {
-
-        std::cout << "Nothing to pop\n";
         dataAccessLock.unlock();
+        std::cout << "Nothing to pop\n";
         return;
     }
     if (prev == nullptr) {
@@ -47,10 +46,10 @@ void linkedListNum::findAndpop(int value) {
         prev->next = curr->next;
     }
     delete curr;
-    std::cout << "Remove value: " << value << "\n";
     dataAccessLock.unlock();
+    std::cout << "Remove value: " << value << "\n";
 }
-int linkedListNum::tests(threadManager &manager, int time) {
+void linkedListNum::test(threadManager &manager, int time) {
     auto start = std::chrono::steady_clock::now();
     while (true) {
         auto randVal = utils::getRandom(0, 2);
@@ -63,9 +62,15 @@ int linkedListNum::tests(threadManager &manager, int time) {
         auto end = std::chrono::steady_clock::now();
         auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         if (elapsedMs > time) {
-            return totalTasks;
+            totalTimeTaken = elapsedMs;
+            return;
         }
     }
+}
+
+void linkedListNum::getStats() {
+    std::cout << "Total tasks: " << totalTasks << "\n";
+    std::cout << "Total time taken : " << totalTimeTaken << "\n";
 }
 
 linkedListNum::~linkedListNum() {

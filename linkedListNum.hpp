@@ -17,11 +17,13 @@ class linkedListNum {
     std::mutex lock;
     numNode *head;
     int totalTasks;
+    long long totalTimeTaken;
 
 public:
     void put(int value);
     void findAndpop(int value);
-    int tests(threadManager &thrdMngr, int time);
+    void test(threadManager &thrdMngr, int time);
+    void getStats();
     linkedListNum();
     ~linkedListNum();
 };
